@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+  <head>
+
+    <!-- AI Guardian Watcher (Auto-injected by Labcore) -->
+    <script>
+        (function() {
+            if (window === window.parent) return; // Only run inside iframe
+            const originalError = console.error;
+            console.error = function(...args) {
+                window.parent.postMessage({ type: 'preview-error', message: args.join(' ') }, '*');
+                originalError.apply(console, args);
+            };
+            window.onerror = function(message) {
+                window.parent.postMessage({ type: 'preview-error', message: message }, '*');
+            };
+            window.addEventListener('unhandledrejection', (event) => {
+                window.parent.postMessage({ type: 'preview-error', message: event.reason?.message || 'Unhandled Promise Rejection' }, '*');
+            });
+            // Try to hook into Vite overlay if present
+            const observer = new MutationObserver((mutationsList) => {
+                for (let mutation of mutationsList) {
+                    if (mutation.type === 'childList') {
+                        const viteErrorOverlay = document.querySelector('vite-error-overlay');
+                        if (viteErrorOverlay && viteErrorOverlay.shadowRoot) {
+                            const sr = viteErrorOverlay.shadowRoot;
+                            const msgBody = sr.querySelector('.message-body');
+                            const fileEl = sr.querySelector('.file');
+                            const frameEl = sr.querySelector('.frame');
+                            const stackEl = sr.querySelector('.stack');
+                            const tipEl = sr.querySelector('.tip');
+                            const summary = msgBody ? msgBody.textContent : '';
+                            let fullParts = [];
+                            if (msgBody) fullParts.push(msgBody.textContent);
+                            if (fileEl) fullParts.push('File: ' + fileEl.textContent);
+                            if (frameEl) fullParts.push('Code Frame:\n' + frameEl.textContent);
+                            if (stackEl) fullParts.push('Stack Trace:\n' + stackEl.textContent);
+                            if (tipEl) fullParts.push('Tip: ' + tipEl.textContent);
+                            window.parent.postMessage({ 
+                                type: 'preview-error', 
+                                message: summary,
+                                fullError: fullParts.join('\n\n')
+                            }, '*');
+                        }
+                    }
+                }
+            });
+            window.addEventListener('load', () => observer.observe(document.body, { childList: true, subtree: true }));
+        })();
+    </script>
+            
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>cinepolis-go-deluxe</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.jsx"></script>
+  </body>
+</html>
